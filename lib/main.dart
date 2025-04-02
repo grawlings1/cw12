@@ -33,10 +33,11 @@ class InventoryItem {
   });
 
   factory InventoryItem.fromDocument(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
     return InventoryItem(
       id: doc.id,
-      name: doc.get('name'),
-      details: doc.get('details'),
+      name: data['name'] ?? '',
+      details: data.containsKey('details') ? data['details'] as String : '',
     );
   }
 
@@ -69,8 +70,9 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
       body: StreamBuilder<QuerySnapshot>(
         stream: itemsCollection.snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData)
+          if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
+          }
           final List<InventoryItem> items = (snapshot.data?.docs ?? [])
               .map((doc) => InventoryItem.fromDocument(doc))
               .toList();
@@ -81,6 +83,23 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
               return ListTile(
                 title: Text(item.name),
                 subtitle: Text('Details: ${item.details}'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () {
+                        _showEditItemDialog(item);
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () {
+                        _deleteItem(item);
+                      },
+                    ),
+                  ],
+                ),
               );
             },
           );
@@ -145,5 +164,61 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
         );
       },
     );
+  }
+
+  void _showEditItemDialog(InventoryItem item) {
+    String updatedName = item.name;
+    String updatedDetails = item.details;
+    showDialog(
+      context: context,
+      builder: (context) {
+        final nameController = TextEditingController(text: item.name);
+        final detailsController = TextEditingController(text: item.details);
+        return AlertDialog(
+          title: const Text("Edit Item"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                decoration: const InputDecoration(labelText: "Item Name"),
+                controller: nameController,
+                onChanged: (value) {
+                  updatedName = value;
+                },
+              ),
+              TextField(
+                decoration: const InputDecoration(labelText: "Details"),
+                controller: detailsController,
+                onChanged: (value) {
+                  updatedDetails = value;
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: const Text("Cancel"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            ElevatedButton(
+              child: const Text("Update"),
+              onPressed: () {
+                itemsCollection.doc(item.id).update({
+                  'name': updatedName,
+                  'details': updatedDetails,
+                });
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _deleteItem(InventoryItem item) {
+    itemsCollection.doc(item.id).delete();
   }
 }
