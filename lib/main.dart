@@ -87,10 +87,63 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: _showAddItemDialog,
         tooltip: 'Add Item',
         child: const Icon(Icons.add),
       ),
+    );
+  }
+
+  void _showAddItemDialog() {
+    String? itemName;
+    String? itemDetails;
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Add New Item"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                decoration: const InputDecoration(labelText: "Item Name"),
+                onChanged: (value) {
+                  itemName = value;
+                },
+              ),
+              TextField(
+                decoration: const InputDecoration(labelText: "Details"),
+                onChanged: (value) {
+                  itemDetails = value;
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: const Text("Cancel"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            ElevatedButton(
+              child: const Text("Add"),
+              onPressed: () {
+                if (itemName != null &&
+                    itemName!.isNotEmpty &&
+                    itemDetails != null &&
+                    itemDetails!.isNotEmpty) {
+                  itemsCollection.add({
+                    'name': itemName,
+                    'details': itemDetails,
+                  });
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }
